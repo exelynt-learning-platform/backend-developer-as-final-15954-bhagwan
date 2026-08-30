@@ -276,6 +276,7 @@ class CoverageCompletionTest {
         when(resourceRepo.findById(1L)).thenReturn(Optional.of(first));
         when(resourceRepo.findById(2L)).thenReturn(Optional.of(second));
         when(resourceRepo.existsById(1L)).thenReturn(true);
+        when(resourceRepo.existsById(2L)).thenReturn(true);
         when(resourceRepo.existsById(99L)).thenReturn(false);
         when(resourceRepo.save(any(Resource.class))).thenAnswer(invocation -> {
             Resource saved = invocation.getArgument(0);
@@ -285,8 +286,10 @@ class CoverageCompletionTest {
 
         assertEquals(2, resourceService.all().size());
         assertEquals("Room", resourceService.get(1L).description());
+        assertThrows(EntityNotFoundException.class, () -> resourceService.get(99L));
         assertEquals("Cabin", resourceService.create(new ResourceRequest("Cabin", "Quiet", new BigDecimal("10.00"), true)).name());
         assertEquals("Desk2", resourceService.update(2L, new ResourceRequest("Desk2", "Updated", new BigDecimal("25.00"), true)).name());
+        assertThrows(EntityNotFoundException.class, () -> resourceService.update(99L, new ResourceRequest("X", "Y", new BigDecimal("10.00"), true)));
         assertThrows(EntityNotFoundException.class, () -> resourceService.delete(99L));
         resourceService.delete(1L);
         verify(resourceRepo).deleteById(1L);

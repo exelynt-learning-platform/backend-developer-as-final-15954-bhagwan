@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReservationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">resource-booking</a> &gt; <a href="index.source.html" class="el_package">com.example.booking.service</a> &gt; <span class="el_source">ReservationService.java</span></div><h1>ReservationService.java</h1><pre class="source lang-java linenums">package com.example.booking.service;
+
+import com.example.booking.api.dto.ReservationDtos.*;
+import com.example.booking.domain.*;
+import com.example.booking.repository.*;
+import jakarta.persistence.EntityNotFoundException;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
+
+@Service
+public class ReservationService {
+    private final ReservationRepository reservations; private final ResourceRepository resources; private final UserRepository users;
+<span class="fc" id="L17">    public ReservationService(ReservationRepository reservations, ResourceRepository resources, UserRepository users) { this.reservations = reservations; this.resources = resources; this.users = users; }</span>
+    public Page&lt;ReservationResponse&gt; find(String username, boolean admin, ReservationStatus status, BigDecimal min, BigDecimal max, Pageable page) {
+<span class="pc" id="L19">        Specification&lt;Reservation&gt; spec = (root, query, cb) -&gt; cb.conjunction();</span>
+<span class="pc bpc" id="L20" title="1 of 2 branches missed.">        if (!admin) spec = spec.and((root, query, cb) -&gt; cb.equal(root.get(&quot;user&quot;).get(&quot;username&quot;), username));</span>
+<span class="pc bpc" id="L21" title="1 of 2 branches missed.">        if (status != null) spec = spec.and((root, query, cb) -&gt; cb.equal(root.get(&quot;status&quot;), status));</span>
+<span class="pc bpc" id="L22" title="1 of 2 branches missed.">        if (min != null) spec = spec.and((root, query, cb) -&gt; cb.greaterThanOrEqualTo(root.get(&quot;price&quot;), min));</span>
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">        if (max != null) spec = spec.and((root, query, cb) -&gt; cb.lessThanOrEqualTo(root.get(&quot;price&quot;), max));</span>
+<span class="fc" id="L24">        return reservations.findAll(spec, page).map(this::response);</span>
+    }
+<span class="nc" id="L26">    public ReservationResponse get(Long id, String username, boolean admin) { Reservation r = findEntity(id); checkOwner(r, username, admin); return response(r); }</span>
+<span class="pc bfc" id="L27" title="All 2 branches covered.">    public ReservationResponse create(String username, ReservationRequest request) { validateTimes(request.startTime(), request.endTime()); Resource resource = resources.findById(request.resourceId()).orElseThrow(() -&gt; new EntityNotFoundException(&quot;Resource not found: &quot; + request.resourceId())); if (!resource.isAvailable()) throw new IllegalArgumentException(&quot;Resource is unavailable&quot;); AppUser user = users.findByUsername(username).orElseThrow(() -&gt; new EntityNotFoundException(&quot;User not found&quot;)); return response(reservations.save(new Reservation(resource, user, request.startTime(), request.endTime(), request.price()))); }</span>
+<span class="fc" id="L28">    public ReservationResponse update(Long id, String username, boolean admin, ReservationUpdate request) { validateTimes(request.startTime(), request.endTime()); Reservation r = findEntity(id); checkOwner(r, username, admin); r.update(request.startTime(), request.endTime(), request.price(), request.status()); return response(reservations.save(r)); }</span>
+<span class="fc" id="L29">    public void delete(Long id, String username, boolean admin) { Reservation r = findEntity(id); checkOwner(r, username, admin); reservations.delete(r); }</span>
+<span class="pc" id="L30">    private Reservation findEntity(Long id) { return reservations.findById(id).orElseThrow(() -&gt; new EntityNotFoundException(&quot;Reservation not found: &quot; + id)); }</span>
+<span class="pc bpc" id="L31" title="1 of 4 branches missed.">    private void checkOwner(Reservation r, String username, boolean admin) { if (!admin &amp;&amp; !r.getUser().getUsername().equals(username)) throw new AccessDeniedException(&quot;Reservation does not belong to the current user&quot;); }</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">    private void validateTimes(OffsetDateTime start, OffsetDateTime end) { if (!end.isAfter(start)) throw new IllegalArgumentException(&quot;endTime must be after startTime&quot;); }</span>
+<span class="fc" id="L33">    private ReservationResponse response(Reservation r) { return new ReservationResponse(r.getId(), r.getResource().getId(), r.getResource().getName(), r.getUser().getUsername(), r.getStartTime(), r.getEndTime(), r.getPrice(), r.getStatus()); }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

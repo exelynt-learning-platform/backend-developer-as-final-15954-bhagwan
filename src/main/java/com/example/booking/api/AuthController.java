@@ -15,13 +15,26 @@ import com.example.booking.security.JwtService;
 
 import jakarta.validation.Valid;
 
-@RestController 
+@RestController
 @RequestMapping("/auth")
 public class AuthController {
     private final AuthenticationManager manager;
-     private final JwtService jwt;
-    public AuthController(AuthenticationManager manager, JwtService jwt) { 
+    private final JwtService jwt;
+
+    public AuthController(AuthenticationManager manager, JwtService jwt) {
         this.manager = manager;
-         this.jwt = jwt; }
-    @PostMapping("/login") public LoginResponse login(@Valid @RequestBody LoginRequest request) { Authentication auth = manager.authenticate(new UsernamePasswordAuthenticationToken(request.username(), request.password())); String role = auth.getAuthorities().iterator().next().getAuthority().replace("ROLE_", ""); return new LoginResponse(jwt.generateToken((org.springframework.security.core.userdetails.UserDetails) auth.getPrincipal()), auth.getName(), role); }
+        this.jwt = jwt;
+    }
+
+    @PostMapping("/login")
+    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
+        Authentication auth = manager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.username(), request.password())
+        );
+
+        String role = auth.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
+        String token = jwt.generateToken((org.springframework.security.core.userdetails.UserDetails) auth.getPrincipal());
+
+        return new LoginResponse(token, auth.getName(), role);
+    }
 }

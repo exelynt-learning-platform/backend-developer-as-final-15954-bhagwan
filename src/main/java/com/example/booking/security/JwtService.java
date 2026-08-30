@@ -12,13 +12,36 @@ import org.springframework.stereotype.Service;
 public class JwtService {
     private final Algorithm algorithm;
     private final long expirationMs;
+
     public JwtService(@Value("${jwt.secret}") String secret, @Value("${jwt.expiration-ms}") long expirationMs) {
-        this.algorithm = Algorithm.HMAC256(secret); this.expirationMs = expirationMs;
+        this.algorithm = Algorithm.HMAC256(secret);
+        this.expirationMs = expirationMs;
     }
+
     public String generateToken(UserDetails user) {
-        return JWT.create().withSubject(user.getUsername()).withClaim("role", user.getAuthorities().iterator().next().getAuthority()).withIssuedAt(new Date()).withExpiresAt(new Date(System.currentTimeMillis() + expirationMs)).sign(algorithm);
+        return JWT.create()
+            .withSubject(user.getUsername())
+            .withClaim("role", user.getAuthorities().iterator().next().getAuthority())
+            .withIssuedAt(new Date())
+            .withExpiresAt(new Date(System.currentTimeMillis() + expirationMs))
+            .sign(algorithm);
     }
-    public String username(String token) { return decoded(token).getSubject(); }
-    public boolean valid(String token, UserDetails user) { try { DecodedJWT decoded = decoded(token); return user.getUsername().equals(decoded.getSubject()) && decoded.getExpiresAt().after(new Date()); } catch (RuntimeException ex) { return false; } }
-    private DecodedJWT decoded(String token) { return JWT.require(algorithm).build().verify(token); }
+
+    public String username(String token) {
+        return decoded(token).getSubject();
+    }
+
+    public boolean valid(String token, UserDetails user) {
+        try {
+            DecodedJWT decoded = decoded(token);
+            return user.getUsername().equals(decoded.getSubject())
+                && decoded.getExpiresAt().after(new Date());
+        } catch (RuntimeException ex) {
+            return false;
+        }
+    }
+
+    private DecodedJWT decoded(String token) {
+        return JWT.require(algorithm).build().verify(token);
+    }
 }

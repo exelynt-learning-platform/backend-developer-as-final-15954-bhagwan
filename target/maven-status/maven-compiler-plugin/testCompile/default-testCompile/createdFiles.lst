@@ -1,0 +1,4 @@
+com\example\booking\security\JwtSecurityFlowTest.class
+com\example\booking\api\AuthControllerIntegrationTest.class
+com\example\booking\security\JwtServiceTest.class
+com\example\booking\service\ReservationServiceTest.class
